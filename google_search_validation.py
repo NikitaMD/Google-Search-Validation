@@ -36,10 +36,10 @@ RESULTS_MISMATCHES = '# Total amount of returns ({0}) mismatches with expected (
 
 
 def test_google_search(keyword, expected_total, link_to_validate):
-    # open Google page
+    # open Google Search page
     driver.get('http://www.google.com/')
 
-    # Search for specified keyword - test argument
+    # Search for specified keyword - test argument(command line parameter: --kwd)
     driver.find_element_by_name('q').send_keys(keyword)
     search_btn = wait_for_visible(driver, By.XPATH, '//button[@aria-label="Google Search"]')
     search_btn.click()
@@ -50,19 +50,20 @@ def test_google_search(keyword, expected_total, link_to_validate):
     assert int(actual_total) == int(expected_total), RESULTS_MISMATCHES.format(actual_total, expected_total)
     logger.info(RESULTS_MATCHES.format(actual_total, expected_total))
 
-    # Open result link
+    # Open result link (command line parameter: -- link_to_validate)
     click_on_link(link_to_validate)
 
-    # Verify HTTP status code
+    # Verify HTTP status code (Must be 200)
     validate_status_code(driver.current_url, 200)
     logger.info('# Link (#{0}) is valid (200)'.format(link_to_validate))
     logger.info('# Page title - ({0})'.format(driver.title))
 
-    # Retrieve page size
+    #  Capture the size of the page
     logger.info('# Page size - {0} bytes'.format(get_content_size(driver.current_url)))
 
 
 def log_system_info():
+    # Write system info to log file
     logger.info('# ==================================================================')
     logger.info('# Username: ' + test_data.user_name)
     logger.info('# Email: ' + test_data.user_email)
@@ -75,6 +76,9 @@ def log_system_info():
 
 
 def click_on_link(index):
+    # Link index should be in range: 1 > index > 100. Otherwise ask to provide valid range.
+    # If index not on first page, go to page valid page. Example: link 52 should be on page 4
+    # Click on that link
     if index < 1 or index > 100:
         assert False, 'Please specify link in range: 0 < index <= 100'
     if index > 10:
@@ -97,6 +101,7 @@ def click_on_link(index):
 
 
 def validate_status_code(url, expected_code):
+    # Validate that provided url return expected status code
     try:
         response = requests.get(url)
         actual_code = response.status_code
@@ -107,11 +112,17 @@ def validate_status_code(url, expected_code):
 
 
 def get_content_size(url):
+    # return page size in bytes from provided url
     connection = urllib2.urlopen(url)
     return len(connection.read())
 
 
 def wait_for_visible(driver, locator_type, locator, max_wait_time=30, optional_message=None):
+    """
+    Wait until element to be present on the DOM of a page and visible.
+    :param locator_type: example - By.XPATH
+    :param max_wait_time: number of seconds before timing out
+    """
     wait = WebDriverWait(driver, max_wait_time)
     if not optional_message:
         optional_message = "Element {0} did not appear on the page after waiting for {1} seconds".format(locator,
